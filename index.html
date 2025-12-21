@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Générateur de Planches BD</title>
+    <style>
+        :root {
+            --color-background: #fcfcf9;
+            --color-surface: #fffffd;
+            --color-text: #13343b;
+            --color-text-secondary: #626c71;
+            --color-primary: #21808d;
+            --color-primary-hover: #1d7480;
+            --color-border: rgba(94, 82, 64, 0.2);
+            --color-secondary: rgba(94, 82, 64, 0.12);
+            --color-secondary-hover: rgba(94, 82, 64, 0.2);
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --color-background: #1f2121;
+                --color-surface: #262828;
+                --color-text: #f5f5f5;
+                --color-text-secondary: rgba(167, 169, 169, 0.7);
+                --color-primary: #32b8c6;
+                --color-primary-hover: #2da6b2;
+                --color-border: rgba(119, 124, 124, 0.3);
+                --color-secondary: rgba(119, 124, 124, 0.15);
+                --color-secondary-hover: rgba(119, 124, 124, 0.25);
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--color-background);
+            color: var(--color-text);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 30px;
+        }
+
+        .controls {
+            background: var(--color-surface);
+            padding: 24px;
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: var(--color-text);
+        }
+
+        .control-group {
+            margin-bottom: 24px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            color: var(--color-text);
+        }
+
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            background: var(--color-surface);
+            color: var(--color-text);
+            font-size: 14px;
+        }
+
+        input[type="number"]:focus,
+        select:focus {
+            outline: 2px solid var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        .row-control {
+            margin-bottom: 16px;
+            padding: 16px;
+            background: var(--color-secondary);
+            border-radius: 8px;
+        }
+
+        .row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .row-header h3 {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .remove-btn {
+            background: transparent;
+            border: 1px solid var(--color-border);
+            color: var(--color-text);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .remove-btn:hover {
+            background: var(--color-secondary-hover);
+        }
+
+        .panels-control {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .panel-input {
+            flex: 1;
+            min-width: 80px;
+        }
+
+        .panel-input input {
+            width: 100%;
+        }
+
+        button {
+            background: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        button:hover {
+            background: var(--color-primary-hover);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .export-btn {
+            margin-top: 24px;
+            padding: 12px 16px;
+            font-size: 15px;
+        }
+
+        .preview-container {
+            background: var(--color-surface);
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid var(--color-border);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .page-wrapper {
+            background: white;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            position: relative;
+        }
+
+        .page {
+            position: relative;
+            background: white;
+        }
+
+        .panel {
+            position: absolute;
+            background: white;
+            border: solid black;
+        }
+
+        @media (max-width: 1024px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .controls {
+                position: relative;
+                top: 0;
+            }
+        }
+
+        .info-text {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            margin-top: 4px;
+        }
+
+        .merge-controls {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--color-border);
+        }
+
+        .merge-btn {
+            background: var(--color-secondary);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 4px;
+        }
+
+        .merge-btn:hover {
+            background: var(--color-secondary-hover);
+        }
+
+        .merge-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .panel.merged {
+            background: rgba(33, 128, 141, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <h1>Configuration</h1>
+
+            <div class="control-group">
+                <label for="pageMargin">Marge de page (mm)</label>
+                <input type="number" id="pageMargin" min="8" max="12" value="10" step="0.5">
+                <div class="info-text">8 à 12 mm du bord</div>
+            </div>
+
+            <div class="control-group">
+                <label for="panelSpacing">Espacement entre cases (mm)</label>
+                <input type="number" id="panelSpacing" min="1" max="3" value="2" step="0.5">
+                <div class="info-text">1 à 3 mm entre les cases</div>
+            </div>
+
+            <div class="control-group">
+                <label for="borderWidth">Épaisseur contours (mm)</label>
+                <input type="number" id="borderWidth" min="1" max="3" value="1" step="0.5">
+                <div class="info-text">1 à 3 mm de contours noirs</div>
+            </div>
+
+            <div class="control-group">
+                <label>Lignes de cases</label>
+                <div id="rowsContainer"></div>
+                <button id="addRowBtn">+ Ajouter une ligne</button>
+                <div class="info-text">1 à 5 lignes maximum</div>
+            </div>
+
+            <div class="control-group">
+                <label for="exportFormat">Format d'export</label>
+                <select id="exportFormat">
+                    <option value="png">PNG (haute qualité)</option>
+                    <option value="jpg">JPG (compressé)</option>
+                </select>
+            </div>
+
+            <button class="export-btn" id="downloadBtn">📥 Télécharger l'image</button>
+        </div>
+
+        <div class="preview-container">
+            <div class="page-wrapper">
+                <div id="page" class="page"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const A4_WIDTH_MM = 210;
+        const A4_HEIGHT_MM = 297;
+        const MM_TO_PX = 3.7795275591;
+
+        let rows = [
+            { panels: [1, 1, 1], mergedPanels: [] },
+            { panels: [1, 2], mergedPanels: [] },
+            { panels: [1, 1], mergedPanels: [] }
+        ];
+
+        const pageMarginInput = document.getElementById('pageMargin');
+        const panelSpacingInput = document.getElementById('panelSpacing');
+        const borderWidthInput = document.getElementById('borderWidth');
+        const rowsContainer = document.getElementById('rowsContainer');
+        const addRowBtn = document.getElementById('addRowBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const page = document.getElementById('page');
+
+        function init() {
+            renderRowControls();
+            renderPage();
+            
+            pageMarginInput.addEventListener('input', renderPage);
+            panelSpacingInput.addEventListener('input', renderPage);
+            borderWidthInput.addEventListener('input', renderPage);
+            addRowBtn.addEventListener('click', addRow);
+            downloadBtn.addEventListener('click', downloadImage);
+        }
+
+        function renderRowControls() {
+            rowsContainer.innerHTML = '';
+            
+            rows.forEach((row, rowIndex) => {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'row-control';
+                
+                const header = document.createElement('div');
+                header.className = 'row-header';
+                
+                const title = document.createElement('h3');
+                title.textContent = `Ligne ${rowIndex + 1}`;
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-btn';
+                removeBtn.textContent = '✕ Supprimer';
+                removeBtn.onclick = () => removeRow(rowIndex);
+                
+                header.appendChild(title);
+                if (rows.length > 1) {
+                    header.appendChild(removeBtn);
+                }
+                
+                const panelsControl = document.createElement('div');
+                panelsControl.className = 'panels-control';
+                
+                row.panels.forEach((width, panelIndex) => {
+                    const panelInput = document.createElement('div');
+                    panelInput.className = 'panel-input';
+                    
+                    const label = document.createElement('label');
+                    label.textContent = `Case ${panelIndex + 1}`;
+                    label.style.fontSize = '11px';
+                    
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.min = '1';
+                    input.max = '5';
+                    input.value = width;
+                    input.addEventListener('input', (e) => {
+                        rows[rowIndex].panels[panelIndex] = parseFloat(e.target.value) || 1;
+                        renderPage();
+                    });
+                    
+                    panelInput.appendChild(label);
+                    panelInput.appendChild(input);
+                    panelsControl.appendChild(panelInput);
+                });
+                
+                const addPanelBtn = document.createElement('button');
+                addPanelBtn.textContent = '+ Case';
+                addPanelBtn.style.fontSize = '12px';
+                addPanelBtn.style.padding = '6px 10px';
+                addPanelBtn.disabled = row.panels.length >= 5;
+                addPanelBtn.onclick = () => {
+                    if (row.panels.length < 5) {
+                        rows[rowIndex].panels.push(1);
+                        renderRowControls();
+                        renderPage();
+                    }
+                };
+                
+                const removePanelBtn = document.createElement('button');
+                removePanelBtn.textContent = '− Case';
+                removePanelBtn.style.fontSize = '12px';
+                removePanelBtn.style.padding = '6px 10px';
+                removePanelBtn.disabled = row.panels.length <= 1;
+                removePanelBtn.onclick = () => {
+                    if (row.panels.length > 1) {
+                        rows[rowIndex].panels.pop();
+                        renderRowControls();
+                        renderPage();
+                    }
+                };
+                
+                rowDiv.appendChild(header);
+                rowDiv.appendChild(panelsControl);
+                
+                const btnContainer = document.createElement('div');
+                btnContainer.style.display = 'flex';
+                btnContainer.style.gap = '8px';
+                btnContainer.style.marginTop = '8px';
+                btnContainer.appendChild(addPanelBtn);
+                btnContainer.appendChild(removePanelBtn);
+                rowDiv.appendChild(btnContainer);
+                
+                // Merge controls
+                if (rowIndex < rows.length - 1) {
+                    const mergeControls = document.createElement('div');
+                    mergeControls.className = 'merge-controls';
+                    
+                    const mergeLabel = document.createElement('label');
+                    mergeLabel.textContent = 'Fusionner avec ligne suivante:';
+                    mergeLabel.style.fontSize = '11px';
+                    mergeLabel.style.marginBottom = '4px';
+                    mergeControls.appendChild(mergeLabel);
+                    
+                    row.panels.forEach((_, panelIndex) => {
+                        const mergeBtn = document.createElement('button');
+                        mergeBtn.className = 'merge-btn';
+                        const isMerged = row.mergedPanels?.includes(panelIndex);
+                        mergeBtn.textContent = isMerged ? `✓ Case ${panelIndex + 1}` : `Fusionner case ${panelIndex + 1}`;
+                        mergeBtn.style.width = '100%';
+                        mergeBtn.onclick = () => toggleMerge(rowIndex, panelIndex);
+                        if (isMerged) {
+                            mergeBtn.style.background = 'var(--color-primary)';
+                            mergeBtn.style.color = 'white';
+                            mergeBtn.style.borderColor = 'var(--color-primary)';
+                        }
+                        mergeControls.appendChild(mergeBtn);
+                    });
+                    
+                    rowDiv.appendChild(mergeControls);
+                }
+                
+                rowsContainer.appendChild(rowDiv);
+            });
+            
+            addRowBtn.disabled = rows.length >= 5;
+        }
+
+        function addRow() {
+            if (rows.length < 5) {
+                rows.push({ panels: [1, 1], mergedPanels: [] });
+                renderRowControls();
+                renderPage();
+            }
+        }
+
+        function removeRow(index) {
+            if (rows.length > 1) {
+                rows.splice(index, 1);
+                renderRowControls();
+                renderPage();
+            }
+        }
+
+        function toggleMerge(rowIndex, panelIndex) {
+            if (!rows[rowIndex].mergedPanels) {
+                rows[rowIndex].mergedPanels = [];
+            }
+            
+            const mergedIndex = rows[rowIndex].mergedPanels.indexOf(panelIndex);
+            if (mergedIndex > -1) {
+                rows[rowIndex].mergedPanels.splice(mergedIndex, 1);
+            } else {
+                rows[rowIndex].mergedPanels.push(panelIndex);
+            }
+            
+            renderRowControls();
+            renderPage();
+        }
+
+        function renderPage() {
+            const pageMargin = parseFloat(pageMarginInput.value);
+            const panelSpacing = parseFloat(panelSpacingInput.value);
+            const borderWidth = parseFloat(borderWidthInput.value);
+            
+            const pageWidthPx = A4_WIDTH_MM * MM_TO_PX;
+            const pageHeightPx = A4_HEIGHT_MM * MM_TO_PX;
+            
+            page.style.width = pageWidthPx + 'px';
+            page.style.height = pageHeightPx + 'px';
+            
+            const marginPx = pageMargin * MM_TO_PX;
+            const spacingPx = panelSpacing * MM_TO_PX;
+            const borderPx = borderWidth * MM_TO_PX;
+            
+            const availableWidth = pageWidthPx - (2 * marginPx);
+            const availableHeight = pageHeightPx - (2 * marginPx);
+            
+            const totalRowHeights = rows.length;
+            const totalSpacingHeight = (rows.length - 1) * spacingPx;
+            const rowHeight = (availableHeight - totalSpacingHeight) / totalRowHeights;
+            
+            page.innerHTML = '';
+            
+            let currentY = marginPx;
+            
+            // Calculate panel positions for all rows first
+            const panelPositions = [];
+            rows.forEach((row, rowIndex) => {
+                const totalPanelWidths = row.panels.reduce((sum, w) => sum + w, 0);
+                const totalSpacingWidth = (row.panels.length - 1) * spacingPx;
+                const availableRowWidth = availableWidth - totalSpacingWidth;
+                
+                let currentX = marginPx;
+                const rowPanels = [];
+                
+                row.panels.forEach((panelWidth, panelIndex) => {
+                    const width = (panelWidth / totalPanelWidths) * availableRowWidth;
+                    
+                    rowPanels.push({
+                        x: currentX,
+                        y: currentY,
+                        width: width,
+                        height: rowHeight,
+                        panelIndex: panelIndex
+                    });
+                    
+                    currentX += width + spacingPx;
+                });
+                
+                panelPositions.push(rowPanels);
+                currentY += rowHeight + spacingPx;
+            });
+            
+            // Render panels with merge logic
+            currentY = marginPx;
+            
+            rows.forEach((row, rowIndex) => {
+                const totalPanelWidths = row.panels.reduce((sum, w) => sum + w, 0);
+                const totalSpacingWidth = (row.panels.length - 1) * spacingPx;
+                const availableRowWidth = availableWidth - totalSpacingWidth;
+                
+                let currentX = marginPx;
+                
+                row.panels.forEach((panelWidth, panelIndex) => {
+                    const pos = panelPositions[rowIndex][panelIndex];
+                    const isMerged = row.mergedPanels?.includes(panelIndex);
+                    
+                    let height = pos.height;
+                    
+                    // If this panel is merged with the one below
+                    if (isMerged && rowIndex < rows.length - 1) {
+                        const nextRowPos = panelPositions[rowIndex + 1];
+                        if (nextRowPos && nextRowPos[panelIndex]) {
+                            // Extend height to include next row's panel
+                            height = pos.height + spacingPx + nextRowPos[panelIndex].height;
+                        }
+                    }
+                    
+                    const panel = document.createElement('div');
+                    panel.className = 'panel' + (isMerged ? ' merged' : '');
+                    panel.style.left = pos.x + 'px';
+                    panel.style.top = pos.y + 'px';
+                    panel.style.width = pos.width + 'px';
+                    panel.style.height = height + 'px';
+                    panel.style.borderWidth = borderPx + 'px';
+                    
+                    page.appendChild(panel);
+                });
+                
+                currentY += rowHeight + spacingPx;
+            });
+            
+            // Hide panels that are covered by merged panels
+            rows.forEach((row, rowIndex) => {
+                if (row.mergedPanels && row.mergedPanels.length > 0 && rowIndex < rows.length - 1) {
+                    row.mergedPanels.forEach(panelIndex => {
+                        const nextRowPanels = page.querySelectorAll('.panel');
+                        const nextRowStart = panelPositions.slice(0, rowIndex + 1).reduce((sum, r) => sum + r.length, 0);
+                        const panelToHide = nextRowPanels[nextRowStart + panelIndex];
+                        if (panelToHide) {
+                            panelToHide.style.display = 'none';
+                        }
+                    });
+                }
+            });
+        }
+
+        function downloadImage() {
+            const pageElement = document.getElementById('page');
+            const borderWidth = parseFloat(borderWidthInput.value);
+            const exportFormat = document.getElementById('exportFormat').value;
+            
+            const canvas = document.createElement('canvas');
+            const scale = 3;
+            canvas.width = A4_WIDTH_MM * MM_TO_PX * scale;
+            canvas.height = A4_HEIGHT_MM * MM_TO_PX * scale;
+            
+            const ctx = canvas.getContext('2d');
+            ctx.scale(scale, scale);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const panels = pageElement.querySelectorAll('.panel:not([style*="display: none"])');
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = borderWidth * MM_TO_PX;
+            
+            panels.forEach(panel => {
+                const x = parseFloat(panel.style.left);
+                const y = parseFloat(panel.style.top);
+                const width = parseFloat(panel.style.width);
+                const height = parseFloat(panel.style.height);
+                
+                ctx.fillRect(x, y, width, height);
+                ctx.strokeRect(x, y, width, height);
+            });
+            
+            try {
+                const timestamp = Date.now();
+                const extension = exportFormat;
+                const filename = `planche-bd-${timestamp}.${extension}`;
+                
+                if (exportFormat === 'jpg') {
+                    canvas.toBlob(blob => {
+                        if (blob) {
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = filename;
+                            link.style.display = 'none';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            setTimeout(() => URL.revokeObjectURL(url), 1000);
+                        } else {
+                            alert('Erreur lors de la création du fichier JPG');
+                        }
+                    }, 'image/jpeg', 0.95);
+                } else {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = dataUrl;
+                    link.download = filename;
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                }
+            } catch (error) {
+                console.error('Erreur lors du téléchargement:', error);
+                alert('Erreur lors du téléchargement de l\'image. Veuillez réessayer.');
+            }
+        }
+
+        init();
+    </script>
+</body>
+</html>
