@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -258,6 +259,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="controls">
@@ -312,9 +314,9 @@
         const MM_TO_PX = 3.7795275591;
 
         let rows = [
-            { panels: [1, 1, 1], mergedPanels: [] },
-            { panels: [1, 2], mergedPanels: [] },
-            { panels: [1, 1], mergedPanels: [] }
+            { panels: [1, 1, 1], mergedPanels: [], roundedPanels: [] },
+            { panels: [1, 2], mergedPanels: [], roundedPanels: [] },
+            { panels: [1, 1], mergedPanels: [], roundedPanels: [] }
         ];
 
         const pageMarginInput = document.getElementById('pageMargin');
@@ -328,7 +330,7 @@
         function init() {
             renderRowControls();
             renderPage();
-            
+
             pageMarginInput.addEventListener('input', renderPage);
             panelSpacingInput.addEventListener('input', renderPage);
             borderWidthInput.addEventListener('input', renderPage);
@@ -338,38 +340,38 @@
 
         function renderRowControls() {
             rowsContainer.innerHTML = '';
-            
+
             rows.forEach((row, rowIndex) => {
                 const rowDiv = document.createElement('div');
                 rowDiv.className = 'row-control';
-                
+
                 const header = document.createElement('div');
                 header.className = 'row-header';
-                
+
                 const title = document.createElement('h3');
                 title.textContent = `Ligne ${rowIndex + 1}`;
-                
+
                 const removeBtn = document.createElement('button');
                 removeBtn.className = 'remove-btn';
                 removeBtn.textContent = '✕ Supprimer';
                 removeBtn.onclick = () => removeRow(rowIndex);
-                
+
                 header.appendChild(title);
                 if (rows.length > 1) {
                     header.appendChild(removeBtn);
                 }
-                
+
                 const panelsControl = document.createElement('div');
                 panelsControl.className = 'panels-control';
-                
+
                 row.panels.forEach((width, panelIndex) => {
                     const panelInput = document.createElement('div');
                     panelInput.className = 'panel-input';
-                    
+
                     const label = document.createElement('label');
                     label.textContent = `Case ${panelIndex + 1}`;
                     label.style.fontSize = '11px';
-                    
+
                     const input = document.createElement('input');
                     input.type = 'number';
                     input.min = '1';
@@ -379,12 +381,12 @@
                         rows[rowIndex].panels[panelIndex] = parseFloat(e.target.value) || 1;
                         renderPage();
                     });
-                    
+
                     panelInput.appendChild(label);
                     panelInput.appendChild(input);
                     panelsControl.appendChild(panelInput);
                 });
-                
+
                 const addPanelBtn = document.createElement('button');
                 addPanelBtn.textContent = '+ Case';
                 addPanelBtn.style.fontSize = '12px';
@@ -397,7 +399,7 @@
                         renderPage();
                     }
                 };
-                
+
                 const removePanelBtn = document.createElement('button');
                 removePanelBtn.textContent = '− Case';
                 removePanelBtn.style.fontSize = '12px';
@@ -410,10 +412,10 @@
                         renderPage();
                     }
                 };
-                
+
                 rowDiv.appendChild(header);
                 rowDiv.appendChild(panelsControl);
-                
+
                 const btnContainer = document.createElement('div');
                 btnContainer.style.display = 'flex';
                 btnContainer.style.gap = '8px';
@@ -421,18 +423,18 @@
                 btnContainer.appendChild(addPanelBtn);
                 btnContainer.appendChild(removePanelBtn);
                 rowDiv.appendChild(btnContainer);
-                
+
                 // Merge controls
                 if (rowIndex < rows.length - 1) {
                     const mergeControls = document.createElement('div');
                     mergeControls.className = 'merge-controls';
-                    
+
                     const mergeLabel = document.createElement('label');
                     mergeLabel.textContent = 'Fusionner avec ligne suivante:';
                     mergeLabel.style.fontSize = '11px';
                     mergeLabel.style.marginBottom = '4px';
                     mergeControls.appendChild(mergeLabel);
-                    
+
                     row.panels.forEach((_, panelIndex) => {
                         const mergeBtn = document.createElement('button');
                         mergeBtn.className = 'merge-btn';
@@ -447,22 +449,68 @@
                         }
                         mergeControls.appendChild(mergeBtn);
                     });
-                    
+
                     rowDiv.appendChild(mergeControls);
                 }
-                
+
+                // Rounded corners controls
+                const roundedControls = document.createElement('div');
+                roundedControls.className = 'merge-controls';
+                roundedControls.style.borderTop = '1px solid var(--color-border)';
+                roundedControls.style.marginTop = '12px';
+                roundedControls.style.paddingTop = '12px';
+
+                const roundedLabel = document.createElement('label');
+                roundedLabel.textContent = 'Bords arrondis:';
+                roundedLabel.style.fontSize = '11px';
+                roundedLabel.style.marginBottom = '4px';
+                roundedControls.appendChild(roundedLabel);
+
+                row.panels.forEach((_, panelIndex) => {
+                    const roundedBtn = document.createElement('button');
+                    roundedBtn.className = 'merge-btn';
+                    const isRounded = row.roundedPanels?.includes(panelIndex);
+                    roundedBtn.textContent = isRounded ? `✓ Case ${panelIndex + 1} arrondie` : `Arrondir case ${panelIndex + 1}`;
+                    roundedBtn.style.width = '100%';
+                    roundedBtn.onclick = () => toggleRounded(rowIndex, panelIndex);
+                    if (isRounded) {
+                        roundedBtn.style.background = 'var(--color-primary)';
+                        roundedBtn.style.color = 'white';
+                        roundedBtn.style.borderColor = 'var(--color-primary)';
+                    }
+                    roundedControls.appendChild(roundedBtn);
+                });
+
+                rowDiv.appendChild(roundedControls);
+
                 rowsContainer.appendChild(rowDiv);
             });
-            
+
             addRowBtn.disabled = rows.length >= 5;
         }
 
         function addRow() {
             if (rows.length < 5) {
-                rows.push({ panels: [1, 1], mergedPanels: [] });
+                rows.push({ panels: [1, 1], mergedPanels: [], roundedPanels: [] });
                 renderRowControls();
                 renderPage();
             }
+        }
+
+        function toggleRounded(rowIndex, panelIndex) {
+            if (!rows[rowIndex].roundedPanels) {
+                rows[rowIndex].roundedPanels = [];
+            }
+
+            const roundedIndex = rows[rowIndex].roundedPanels.indexOf(panelIndex);
+            if (roundedIndex > -1) {
+                rows[rowIndex].roundedPanels.splice(roundedIndex, 1);
+            } else {
+                rows[rowIndex].roundedPanels.push(panelIndex);
+            }
+
+            renderRowControls();
+            renderPage();
         }
 
         function removeRow(index) {
@@ -477,14 +525,14 @@
             if (!rows[rowIndex].mergedPanels) {
                 rows[rowIndex].mergedPanels = [];
             }
-            
+
             const mergedIndex = rows[rowIndex].mergedPanels.indexOf(panelIndex);
             if (mergedIndex > -1) {
                 rows[rowIndex].mergedPanels.splice(mergedIndex, 1);
             } else {
                 rows[rowIndex].mergedPanels.push(panelIndex);
             }
-            
+
             renderRowControls();
             renderPage();
         }
@@ -493,41 +541,41 @@
             const pageMargin = parseFloat(pageMarginInput.value);
             const panelSpacing = parseFloat(panelSpacingInput.value);
             const borderWidth = parseFloat(borderWidthInput.value);
-            
+
             const pageWidthPx = A4_WIDTH_MM * MM_TO_PX;
             const pageHeightPx = A4_HEIGHT_MM * MM_TO_PX;
-            
+
             page.style.width = pageWidthPx + 'px';
             page.style.height = pageHeightPx + 'px';
-            
+
             const marginPx = pageMargin * MM_TO_PX;
             const spacingPx = panelSpacing * MM_TO_PX;
             const borderPx = borderWidth * MM_TO_PX;
-            
+
             const availableWidth = pageWidthPx - (2 * marginPx);
             const availableHeight = pageHeightPx - (2 * marginPx);
-            
+
             const totalRowHeights = rows.length;
             const totalSpacingHeight = (rows.length - 1) * spacingPx;
             const rowHeight = (availableHeight - totalSpacingHeight) / totalRowHeights;
-            
+
             page.innerHTML = '';
-            
+
             let currentY = marginPx;
-            
+
             // Calculate panel positions for all rows first
             const panelPositions = [];
             rows.forEach((row, rowIndex) => {
                 const totalPanelWidths = row.panels.reduce((sum, w) => sum + w, 0);
                 const totalSpacingWidth = (row.panels.length - 1) * spacingPx;
                 const availableRowWidth = availableWidth - totalSpacingWidth;
-                
+
                 let currentX = marginPx;
                 const rowPanels = [];
-                
+
                 row.panels.forEach((panelWidth, panelIndex) => {
                     const width = (panelWidth / totalPanelWidths) * availableRowWidth;
-                    
+
                     rowPanels.push({
                         x: currentX,
                         y: currentY,
@@ -535,30 +583,31 @@
                         height: rowHeight,
                         panelIndex: panelIndex
                     });
-                    
+
                     currentX += width + spacingPx;
                 });
-                
+
                 panelPositions.push(rowPanels);
                 currentY += rowHeight + spacingPx;
             });
-            
+
             // Render panels with merge logic
             currentY = marginPx;
-            
+
             rows.forEach((row, rowIndex) => {
                 const totalPanelWidths = row.panels.reduce((sum, w) => sum + w, 0);
                 const totalSpacingWidth = (row.panels.length - 1) * spacingPx;
                 const availableRowWidth = availableWidth - totalSpacingWidth;
-                
+
                 let currentX = marginPx;
-                
+
                 row.panels.forEach((panelWidth, panelIndex) => {
                     const pos = panelPositions[rowIndex][panelIndex];
                     const isMerged = row.mergedPanels?.includes(panelIndex);
-                    
+                    const isRounded = row.roundedPanels?.includes(panelIndex);
+
                     let height = pos.height;
-                    
+
                     // If this panel is merged with the one below
                     if (isMerged && rowIndex < rows.length - 1) {
                         const nextRowPos = panelPositions[rowIndex + 1];
@@ -567,7 +616,7 @@
                             height = pos.height + spacingPx + nextRowPos[panelIndex].height;
                         }
                     }
-                    
+
                     const panel = document.createElement('div');
                     panel.className = 'panel' + (isMerged ? ' merged' : '');
                     panel.style.left = pos.x + 'px';
@@ -575,13 +624,17 @@
                     panel.style.width = pos.width + 'px';
                     panel.style.height = height + 'px';
                     panel.style.borderWidth = borderPx + 'px';
-                    
+
+                    if (isRounded) {
+                        panel.style.borderRadius = '12px';
+                    }
+
                     page.appendChild(panel);
                 });
-                
+
                 currentY += rowHeight + spacingPx;
             });
-            
+
             // Hide panels that are covered by merged panels
             rows.forEach((row, rowIndex) => {
                 if (row.mergedPanels && row.mergedPanels.length > 0 && rowIndex < rows.length - 1) {
@@ -601,37 +654,55 @@
             const pageElement = document.getElementById('page');
             const borderWidth = parseFloat(borderWidthInput.value);
             const exportFormat = document.getElementById('exportFormat').value;
-            
+
             const canvas = document.createElement('canvas');
             const scale = 3;
             canvas.width = A4_WIDTH_MM * MM_TO_PX * scale;
             canvas.height = A4_HEIGHT_MM * MM_TO_PX * scale;
-            
+
             const ctx = canvas.getContext('2d');
             ctx.scale(scale, scale);
             ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
+
             const panels = pageElement.querySelectorAll('.panel:not([style*="display: none"])');
             ctx.fillStyle = 'white';
             ctx.strokeStyle = 'black';
             ctx.lineWidth = borderWidth * MM_TO_PX;
-            
+
             panels.forEach(panel => {
                 const x = parseFloat(panel.style.left);
                 const y = parseFloat(panel.style.top);
                 const width = parseFloat(panel.style.width);
                 const height = parseFloat(panel.style.height);
-                
-                ctx.fillRect(x, y, width, height);
-                ctx.strokeRect(x, y, width, height);
+                const isRounded = panel.style.borderRadius !== '';
+
+                if (isRounded) {
+                    const radius = 12;
+                    ctx.beginPath();
+                    ctx.moveTo(x + radius, y);
+                    ctx.lineTo(x + width - radius, y);
+                    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+                    ctx.lineTo(x + width, y + height - radius);
+                    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+                    ctx.lineTo(x + radius, y + height);
+                    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+                    ctx.lineTo(x, y + radius);
+                    ctx.quadraticCurveTo(x, y, x + radius, y);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                } else {
+                    ctx.fillRect(x, y, width, height);
+                    ctx.strokeRect(x, y, width, height);
+                }
             });
-            
+
             try {
                 const timestamp = Date.now();
                 const extension = exportFormat;
                 const filename = `planche-bd-${timestamp}.${extension}`;
-                
+
                 if (exportFormat === 'jpg') {
                     canvas.toBlob(blob => {
                         if (blob) {
@@ -667,4 +738,5 @@
         init();
     </script>
 </body>
+
 </html>
